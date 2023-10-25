@@ -1,5 +1,4 @@
 import { Component } from '@angular/core';
-import fs from 'fs';
 
 @Component({
   selector: 'app-root',
@@ -7,31 +6,47 @@ import fs from 'fs';
   styleUrls: ['./app.component.css']
 })
 export class AppComponent {
-  title = 'rinha-front';
-  
-  onFileSelected(event: any) {
-    const selectedFile = event.target.files[0];
-    if (selectedFile) {
-      this.processJSONFile(selectedFile);
-    }
-  }
+  title = 'rinha-front';  
+  fileContent: any;
+  batchSize = 1000;
+  currentIndex = 0;
 
-  async processJSONFile(file:string){
-    try {
-      const rawData = fs.readFileSync(file, 'utf-8');
-      const jsonData = JSON.parse(rawData);
-      const totalItems = jsonData.length;
-  
-      for (let i = 0; i < totalItems; i += batchSize) {
-        const batch = jsonData.slice(i, i + batchSize);
-        //await processBatch(batch);
+  handleFileInput(event: any) {
+    const file = event.target.files[0];
+    const reader = new FileReader();
+    reader.onload = (e: any) => {
+      try {
+        this.fileContent = JSON.parse(e.target.result);
+        console.log('Conteúdo do arquivo JSON:', this.fileContent);
+      } catch (error) {
+        console.error('Erro ao analisar o arquivo JSON:', error);
       }
-  
-      console.log('Processamento concluído.');
-    } catch (error) {
-      console.error('Erro durante o processamento:', error);
-    }
+    };
+    reader.readAsText(file);
   }
 
+  processDataInBatches() {
+    if (!this.fileContent || this.currentIndex >= this.fileContent.length) {
+      console.log('Processamento concluído.');
+      return;
+    }
+
+    const end = Math.min(this.currentIndex + this.batchSize, this.fileContent.length);
+    const batch = this.fileContent.slice(this.currentIndex, end);
+    
+    // Aqui você pode processar o lote atual (batch)
+    this.processBatch(batch);
+
+    this.currentIndex = end;
+
+    // Para evitar que o aplicativo trave devido a um grande processamento, você pode usar setTimeout
+    // para dar uma pausa entre as partes do processamento
+    setTimeout(() => {
+      this.processDataInBatches();
+    }, 0);
+  }
+
+  processBatch(batch: any[]) {
+  }
 
 }
